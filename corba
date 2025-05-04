@@ -1,6 +1,104 @@
-echo.idl
+Echo.idl
   module EchoApp {
     interface Echo {
         string echoString(in string input);
     };
 };
+
+EchoServer.java
+package EchoApp;
+
+import org.omg.CORBA.*;
+import org.omg.CosNaming.*;
+import org.omg.PortableServer.*;
+
+public class EchoServer extends EchoPOA {
+
+    @Override
+    public String echoString(String input) {
+        // Convert input string to lowercase and uppercase
+        String lower = input.toLowerCase();
+        String upper = input.toUpperCase();
+        return "Lowercase: " + lower + ", Uppercase: " + upper;
+    }
+
+    public static void main(String[] args) {
+        try {
+            // Initialize the ORB (Object Request Broker)
+            ORB orb = ORB.init(args, null);
+
+            // Create and initialize the POA (Portable Object Adapter)
+            POA rootPOA = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
+            rootPOA.the_POAManager().activate();
+
+            // Create the servant (the object implementing the CORBA interface)
+            EchoServer echoServer = new EchoServer();
+
+            // Activate the servant
+            org.omg.CORBA.Object ref = rootPOA.servant_to_reference(echoServer);
+            Echo href = EchoHelper.narrow(ref);
+
+            // Get the Naming Service
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+
+            // Bind the object reference in the Naming Service
+            String name = "EchoServer";
+            NameComponent[] path = ncRef.to_name(name);
+            ncRef.rebind(path, href);
+
+            System.out.println("Echo Server is ready and waiting...");
+            
+            // Wait for invocations from clients
+            orb.run();
+        } catch (Exception e) {
+            System.err.println("ERROR: " + e);
+            e.printStackTrace();
+        }
+    }
+}
+
+Client.java
+package EchoApp;
+
+import EchoApp.Echo;
+import EchoApp.EchoHelper;
+import org.omg.CORBA.ORB;
+import org.omg.CosNaming.NamingContextExt;
+import org.omg.CosNaming.NamingContextExtHelper;
+import java.util.Scanner;
+
+public class Client {
+
+    public static void main(String args[]) {
+        try {
+            // Initialize ORB
+            ORB orb = ORB.init(args, null);
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+
+            // Resolve reference to the server
+            Echo echoImpl = EchoHelper.narrow(ncRef.resolve_str("EchoServer")); // Change to "EchoServer"
+
+            // Get input from the user
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Enter a string: ");
+            String input = scanner.nextLine();
+
+            // Call the server method
+            String result = echoImpl.echoString(input);
+
+            // Print the result from the server
+            System.out.println("Server replied: " + result);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+Commands
+idlj -fall Echo.idl
+orbd -ORBInitialPort 1050 -ORBInitialHost localhost
+javac EchoApp/*.java
+java EchoApp.EchoServer -ORBInitialPort 1050 -ORBInitialHost localhost
+java EchoApp.Client -ORBInitialPort 1050 -ORBInitialHost localhost
