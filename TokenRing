@@ -1,0 +1,73 @@
+import java.util.*;
+
+public class TokenRing {
+
+    public static void main(String[] args) {
+        Scanner scan = new Scanner(System.in);
+
+        // Input number of nodes in the ring
+        System.out.print("Enter the number of nodes: ");
+        int n = scan.nextInt();
+
+        int token = 0; // Initially, node 0 holds the token
+        int ch;        // User's choice to continue
+        int flag;      // Flag for invalid input
+
+        // Display the circular ring structure
+        System.out.print("Ring topology: ");
+        for (int i = 0; i < n; i++) {
+            System.out.print(i + " ");
+        }
+        System.out.println(0); // To show circular nature
+
+        // Main loop for sending data
+        do {
+            // Input sender, receiver, and data
+            System.out.print("Enter sender node: ");
+            int sender = scan.nextInt();
+
+            System.out.print("Enter receiver node: ");
+            int receiver = scan.nextInt();
+
+            System.out.print("Enter data to send: ");
+            int data = scan.nextInt();
+
+            // Simulate token passing to sender
+            System.out.print("Token passing: ");
+            for (int i = token; i != sender; i = (i + 1) % n) {
+                System.out.print(i + " -> ");
+            }
+            System.out.println(sender);
+
+            // Sender sends data
+            System.out.println("Sender " + sender + " is sending data: " + data);
+
+            // Forward data through intermediate nodes until receiver
+            for (int i = (sender + 1) % n; i != receiver; i = (i + 1) % n) {
+                System.out.println("Data " + data + " forwarded by node " + i);
+            }
+
+            // Receiver gets data
+            System.out.println("Receiver " + receiver + " received data: " + data + "\n");
+
+            // Token now stays with the sender
+            token = sender;
+
+            // Ask user if they want to send again
+            do {
+                flag = 0; // Reset invalid input flag
+                System.out.print("Do you want to send again? Enter 1 for Yes, 0 for No: ");
+                ch = scan.nextInt();
+
+                if (ch != 0 && ch != 1) {
+                    System.out.println("Invalid input! Please enter 1 or 0.");
+                    flag = 1;
+                }
+
+            } while (flag == 1);
+
+        } while (ch == 1);
+
+        scan.close();
+    }
+} 
